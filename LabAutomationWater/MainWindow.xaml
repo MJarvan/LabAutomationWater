@@ -8,10 +8,6 @@
         Title="有机组最帅" Height="600" Width="1200"
         WindowStartupLocation="CenterScreen" Loaded="Window_Loaded" Icon="Icon/favicon.ico">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="43*"/>
-            <ColumnDefinition Width="1157*"/>
-        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="9*" />
