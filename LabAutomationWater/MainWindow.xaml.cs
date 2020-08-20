@@ -296,7 +296,6 @@ namespace LabAutomationWater
 		private void AllClear()
 		{
 			txtList.Clear();
-			preCompoundsNameList.Clear();
 			compoundsNameList.Clear();
 			sampleNameList.Clear();
 			newsampleNameList.Clear();

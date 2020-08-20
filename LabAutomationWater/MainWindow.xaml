@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LabAutomationWater"
         mc:Ignorable="d"
-        Title="有机组最帅" Height="600" Width="1200"
+        Title="有机组最帅(水)" Height="600" Width="1200"
         WindowStartupLocation="CenterScreen" Loaded="Window_Loaded" Icon="Icon/favicon.ico">
     <Grid>
         <Grid.RowDefinitions>
