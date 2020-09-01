@@ -432,6 +432,8 @@ namespace LabAutomationWater
 			textBox.Width = 50;
 			textBox.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
 			textBox.VerticalAlignment = System.Windows.VerticalAlignment.Center;
+			textBox.KeyUp += Tab_TextBox_KeyUp;
+
 			if (preCompoundsNameList.Count > 0)
 			{
 				foreach (KeyValuePair<string,string> keyValuePair in preCompoundsNameList)
@@ -448,6 +450,44 @@ namespace LabAutomationWater
 			stackPanel.Children.Add(textBox);
 
 			return stackPanel;
+		}
+
+		/// <summary>
+		/// enter切换检出限
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void Tab_TextBox_KeyUp(object sender,KeyEventArgs e)
+		{
+			if (e.Key == Key.Enter)
+			{
+				TextBox textbox = sender as TextBox;
+				StackPanel stackPanel = textbox.Parent as StackPanel;
+				TabItem tabItem = stackPanel.Parent as TabItem;
+				TabControl tabControl = tabItem.Parent as TabControl;
+				int tabNum = tabControl.Items.IndexOf(tabItem);
+				//到达最大值
+				TabItem nextTabItem;
+				if (tabNum == tabControl.Items.Count - 1)
+				{
+					nextTabItem = tabControl.Items[0] as TabItem;
+				}
+				else
+				{
+					nextTabItem = tabControl.Items[tabNum + 1] as TabItem;
+				}
+				StackPanel nextStackPanel = nextTabItem.Header as StackPanel;
+				foreach (var item in nextStackPanel.Children)
+				{
+					if (item.GetType() == typeof(TextBox))
+					{
+						TextBox nextTextBox = item as TextBox;
+						Keyboard.Focus(nextTextBox);
+						nextTextBox.Focus();
+					}
+				}
+
+			}
 		}
 
 		/// <summary>
@@ -699,7 +739,7 @@ namespace LabAutomationWater
 								StringBuilder stringBuilder = new StringBuilder("计算公式：" + FormulaComboBox.Text + " × k" + "\n");
 								stringBuilder.Append("C—样品中目标物的质量浓度(" + ZDJCCompanyComboBox.Text + ")\n");
 								//测定浓度要根据她自己填的
-								stringBuilder.Append("Ci——目标物上机测定浓度(" + TargetCompanyComboBox.Text + ")\n");
+								stringBuilder.Append("Ci——目标化合物测定值(" + TargetCompanyComboBox.Text + ")\n");
 								if (FormulaComboBox.Text.Contains("V1"))
 								{
 									stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
@@ -714,7 +754,7 @@ namespace LabAutomationWater
 								StringBuilder stringBuilder = new StringBuilder("计算公式：" + FormulaComboBox.Text + "\n");
 								stringBuilder.Append("C—样品中目标物的质量浓度(" + ZDJCCompanyComboBox.Text + ")\n");
 								//测定浓度要根据她自己填的
-								stringBuilder.Append("Ci——目标物上机测定浓度(" + TargetCompanyComboBox.Text + ")\n");
+								stringBuilder.Append("Ci——目标化合物测定值(" + TargetCompanyComboBox.Text + ")\n");
 								if (FormulaComboBox.Text.Contains("V1"))
 								{
 									stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
@@ -776,7 +816,7 @@ namespace LabAutomationWater
 								}
 							case 1:
 								{
-									cell.SetCellValue("水样体积\nV(" + samplingquantityComboBox.Text + ")");
+									cell.SetCellValue("取样量\nV(" + samplingquantityComboBox.Text + ")");
 									break;
 								}
 							case 2:
@@ -786,7 +826,7 @@ namespace LabAutomationWater
 								}
 							case 3:
 								{
-									cell.SetCellValue("试样体积\nV1(" + constantvolumeComboBox.Text + ")");
+									cell.SetCellValue("定容体积\nV1(" + constantvolumeComboBox.Text + ")");
 									break;
 								}
 							case 4:
@@ -886,11 +926,17 @@ namespace LabAutomationWater
 			sheet.ForceFormulaRecalculation = true;
 			//设置顶部大标题样式
 			HSSFCellStyle cellStyle = CreateStyle(workbook);
+			HSSFCellStyle cellRedStyle = CreateRedStyle(workbook);
+			HSSFCellStyle cellGreyStyle = CreateGreyStyle(workbook);
 
+			List<HSSFCellStyle> listCellStyle = new List<HSSFCellStyle>();
+			listCellStyle.Add(cellStyle);
+			listCellStyle.Add(cellRedStyle);
+			listCellStyle.Add(cellGreyStyle);
 			int Count = 0;
 			foreach (KeyValuePair<List<string>,List<int>> keyValuePair in finalsampleNameList)
 			{
-				CreateVerticalSheet(sheet,cellStyle,keyValuePair.Key,keyValuePair.Value,Count);
+				CreateVerticalSheet(sheet,listCellStyle,keyValuePair.Key,keyValuePair.Value,Count);
 				Count++;
 			}
 
@@ -1072,8 +1118,11 @@ namespace LabAutomationWater
 		/// <param name="cellList"></param>
 		/// <param name="advantageNum"></param>
 		/// <param name="Count"></param>
-		private void CreateVerticalSheet(ISheet sheet,HSSFCellStyle cellStyle,List<string> cellList,List<int> advantageNum,int Count)
+		private void CreateVerticalSheet(ISheet sheet,List<HSSFCellStyle> listCellStyle,List<string> cellList,List<int> advantageNum,int Count)
 		{
+			HSSFCellStyle cellStyle = listCellStyle[0];
+			HSSFCellStyle cellRedStyle = listCellStyle[1];
+			HSSFCellStyle cellGreyStyle = listCellStyle[2];
 			cellStyle.BorderBottom = BorderStyle.Thin;
 			cellStyle.BorderRight = BorderStyle.Thin;
 			cellStyle.BorderTop = BorderStyle.Thin;
@@ -1102,7 +1151,7 @@ namespace LabAutomationWater
 						StringBuilder stringBuilder = new StringBuilder("计算公式：" + FormulaComboBox.Text + " × k" + "\n");
 						stringBuilder.Append("C—样品中目标物的质量浓度(" + ZDJCCompanyComboBox.Text + ")\n");
 						//测定浓度要根据她自己填的
-						stringBuilder.Append("Ci——目标物上机测定浓度(" + TargetCompanyComboBox.Text + ")\n");
+						stringBuilder.Append("Ci——目标化合物测定值(" + TargetCompanyComboBox.Text + ")\n");
 						if (FormulaComboBox.Text.Contains("V1"))
 						{
 							stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
@@ -1117,7 +1166,7 @@ namespace LabAutomationWater
 						StringBuilder stringBuilder = new StringBuilder("计算公式：" + FormulaComboBox.Text + "\n");
 						stringBuilder.Append("C—样品中目标物的质量浓度(" + ZDJCCompanyComboBox.Text + ")\n");
 						//测定浓度要根据她自己填的
-						stringBuilder.Append("Ci——目标物上机测定浓度(" + TargetCompanyComboBox.Text + ")\n");
+						stringBuilder.Append("Ci——目标化合物测定值(" + TargetCompanyComboBox.Text + ")\n");
 						if (FormulaComboBox.Text.Contains("V1"))
 						{
 							stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
@@ -1253,12 +1302,18 @@ namespace LabAutomationWater
 						//是Ci浓度的样品
 						if (j - verticalSheetColumnCount * Count - 2 < cellList.Count)
 						{
-							cell.SetCellValue(cellList[j - verticalSheetColumnCount * Count - 2]);
+							string setvalue = cellList[j - verticalSheetColumnCount * Count - 2];
+							var newcellStyle = CreateColorStyle((HSSFWorkbook)sheet.Workbook,setvalue);
+							cell.CellStyle = newcellStyle;
+							cell.SetCellValue(setvalue);
 						}
 						//是C浓度
 						else if (j - verticalSheetColumnCount * Count - 2 < cellList.Count * 2)
 						{
-							cell.SetCellValue(cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count]);
+							string setvalue = cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count];
+							var newcellStyle = CreateColorStyle((HSSFWorkbook)sheet.Workbook,setvalue);
+							cell.CellStyle = newcellStyle;
+							cell.SetCellValue(setvalue);
 						}
 						else if (j - verticalSheetColumnCount * Count - 2 >= cellList.Count * 2 && j - verticalSheetColumnCount * Count - 2 < cellList.Count + importTakeNum)
 						{
@@ -1304,7 +1359,7 @@ namespace LabAutomationWater
 				}
 				else if (k == 2 + verticalSheetColumnCount * Count)
 				{
-					cell.SetCellValue("目标物上机测定浓度 Ci (" + TargetCompanyComboBox.Text + ")");
+					cell.SetCellValue("目标化合物测定值 Ci (" + TargetCompanyComboBox.Text + ")");
 				}
 				else if (k == 6 + verticalSheetColumnCount * Count)
 				{
@@ -1393,11 +1448,27 @@ namespace LabAutomationWater
 										int num = newsampleNameList.IndexOf(sampleName);
 										//平均样的前两个加起来除以二就是平均值
 										string setvalue = CompareCompoundWithFormula(compoundName,modelC,newsampleNameList[num - 1],newsampleNameList[num - 2]);
+										if (setvalue == "ND" || setvalue.Contains("<"))
+										{
+											compoundsCell.CellStyle = cellGreyStyle;
+										}
+										else
+										{
+											compoundsCell.CellStyle = cellRedStyle;
+										}
 										compoundsCell.SetCellValue(setvalue);
 									}
 									else
 									{
 										string setvalue = CompareCompoundWithFormula(compoundName,modelC,sampleName);
+										if (setvalue == "ND" || setvalue.Contains("<"))
+										{
+											compoundsCell.CellStyle = cellGreyStyle;
+										}
+										else
+										{
+											compoundsCell.CellStyle = cellRedStyle;
+										}
 										compoundsCell.SetCellValue(setvalue);
 									}
 								}
@@ -1421,11 +1492,27 @@ namespace LabAutomationWater
 										int num = newsampleNameList.IndexOf(sampleName);
 										//平均样的前两个加起来除以二就是平均值
 										string setvalue = CompareCompoundWithFormula(compoundName,modelC,newsampleNameList[num - 1],newsampleNameList[num - 2]);
+										if (setvalue == "ND" || setvalue.Contains("<"))
+										{
+											compoundsCell.CellStyle = cellGreyStyle;
+										}
+										else
+										{
+											compoundsCell.CellStyle = cellRedStyle;
+										}
 										compoundsCell.SetCellValue(setvalue);
 									}
 									else
 									{
 										string setvalue = CompareCompoundWithFormula(compoundName,modelC,sampleName);
+										if (setvalue == "ND" || setvalue.Contains("<"))
+										{
+											compoundsCell.CellStyle = cellGreyStyle;
+										}
+										else
+										{
+											compoundsCell.CellStyle = cellRedStyle;
+										}
 										compoundsCell.SetCellValue(setvalue);
 									}
 								}
@@ -1495,7 +1582,12 @@ namespace LabAutomationWater
 			{
 				k = double.Parse(coefficientTextBox.Text);
 			}
-			//目标物上机测定浓度
+			double moleculeV1 = double.Parse((constantvolumeComboBox.SelectedItem as ComboBoxItem).Tag.ToString());
+			double denominatorM = double.Parse((samplingquantityComboBox.SelectedItem as ComboBoxItem).Tag.ToString());
+			double taggetC = double.Parse((TargetCompanyComboBox.SelectedItem as ComboBoxItem).Tag.ToString());
+			double ZDJCCi = double.Parse((ZDJCCompanyComboBox.SelectedItem as ComboBoxItem).Tag.ToString());
+			k *= taggetC / ZDJCCi * (moleculeV1 / denominatorM);
+			//目标化合物测定值
 			double Ci;
 			double C1 = double.NaN;
 			double C2 = double.NaN;
@@ -1519,13 +1611,17 @@ namespace LabAutomationWater
 									Ci = double.Parse(potency);
 									//公式计算
 									//先用写死的，然后之后学习反射
-									if (FormulaComboBox.Text.Contains("V1"))
+									if (FormulaComboBox.Text.Contains("V1") && FormulaComboBox.Text.Contains("V"))
 									{
 										C1 = Ci * f * V1 / V * k;
 									}
-									else
+									else if (FormulaComboBox.Text.Contains("V"))
 									{
 										C1 = Ci * f / V * k;
+									}
+									else
+									{
+										C1 = Ci * f * k;
 									}
 
 								}
@@ -1538,15 +1634,18 @@ namespace LabAutomationWater
 									Ci = double.Parse(potency);
 									//公式计算
 									//先用写死的，然后之后学习反射
-									if (FormulaComboBox.Text.Contains("V1"))
+									if (FormulaComboBox.Text.Contains("V1") && FormulaComboBox.Text.Contains("V"))
 									{
 										C2 = Ci * f * V1 / V * k;
 									}
-									else
+									else if (FormulaComboBox.Text.Contains("V"))
 									{
 										C2 = Ci * f / V * k;
 									}
-
+									else
+									{
+										C2 = Ci * f * k;
+									}
 								}
 							}
 						}
@@ -1560,7 +1659,15 @@ namespace LabAutomationWater
 				string realC = CalculateAccuracyC(compoundName,C.ToString());
 				return realC;
 			}
-			return "<" + modelC;
+
+			if (testZDRadioButton.IsChecked == true)
+			{
+				return "<" + modelC;
+			}
+			else
+			{
+				return "ND";
+			}
 		}
 
 
@@ -1599,7 +1706,7 @@ namespace LabAutomationWater
 				k = double.Parse(coefficientTextBox.Text);
 			}
 
-			//目标物上机测定浓度
+			//目标化合物测定值
 			double Ci;
 			foreach (DataTable dataTable in compoundsDataSet.Tables)
 			{
@@ -1626,7 +1733,7 @@ namespace LabAutomationWater
 									double taggetC = double.Parse((TargetCompanyComboBox.SelectedItem as ComboBoxItem).Tag.ToString());
 									double ZDJCCi = double.Parse((ZDJCCompanyComboBox.SelectedItem as ComboBoxItem).Tag.ToString());
 									//单位换算
-									if (FormulaComboBox.Text.Contains("V1"))
+									if (FormulaComboBox.Text.Contains("V1") && FormulaComboBox.Text.Contains("V"))
 									{
 										if (samplingquantityComboBox.Text != constantvolumeComboBox.Text)
 										{
@@ -1636,7 +1743,7 @@ namespace LabAutomationWater
 										}
 										C = Ci * f * V1 / V * k;
 									}
-									else
+									else if (FormulaComboBox.Text.Contains("V"))
 									{
 										//判断C和Ci/V的单位是否一致
 										//比如C为mg/L
@@ -1656,7 +1763,10 @@ namespace LabAutomationWater
 
 										}
 										C = Ci * f / V * k;
-
+									}
+									else
+									{
+										C = Ci * f * k;
 									}
 									if (C > double.Parse(modelC))
 									{
@@ -1690,6 +1800,82 @@ namespace LabAutomationWater
 									  //cellStyle.BorderRight = BorderStyle.Thin;
 									  //cellStyle.BorderTop = BorderStyle.Thin;
 									  //cellStyle.BorderLeft = BorderStyle.Thin;
+			cellStyle.TopBorderColor = HSSFColor.Black.Index;//DarkGreen(黑绿色)
+			cellStyle.RightBorderColor = HSSFColor.Black.Index;
+			cellStyle.BottomBorderColor = HSSFColor.Black.Index;
+			cellStyle.LeftBorderColor = HSSFColor.Black.Index;
+
+			return cellStyle;
+		}
+
+		private HSSFCellStyle CreateGreyStyle(HSSFWorkbook workbook)
+		{
+			HSSFCellStyle cellStyle = (HSSFCellStyle)workbook.CreateCellStyle(); //创建列头单元格实例样式
+			var cellStyleFont = (HSSFFont)workbook.CreateFont(); //创建变色字体
+			cellStyleFont.Color = HSSFColor.Grey25Percent.Index;
+			cellStyle.SetFont(cellStyleFont); //将字
+			cellStyle.Alignment = NPOI.SS.UserModel.HorizontalAlignment.Center; //水平居中
+			cellStyle.VerticalAlignment = NPOI.SS.UserModel.VerticalAlignment.Center; //垂直居中
+			cellStyle.WrapText = true;//自动换行
+			cellStyle.BorderBottom = BorderStyle.Thin;
+			cellStyle.BorderRight = BorderStyle.Thin;
+			cellStyle.BorderTop = BorderStyle.Thin;
+			cellStyle.BorderLeft = BorderStyle.Thin;
+			cellStyle.TopBorderColor = HSSFColor.Black.Index;//DarkGreen(黑绿色)
+			cellStyle.RightBorderColor = HSSFColor.Black.Index;
+			cellStyle.BottomBorderColor = HSSFColor.Black.Index;
+			cellStyle.LeftBorderColor = HSSFColor.Black.Index;
+
+			return cellStyle;
+		}
+
+		private HSSFCellStyle CreateRedStyle(HSSFWorkbook workbook)
+		{
+			HSSFCellStyle cellStyle = (HSSFCellStyle)workbook.CreateCellStyle(); //创建列头单元格实例样式
+			var cellStyleFont = (HSSFFont)workbook.CreateFont(); //创建变色字体
+			cellStyleFont.Color = HSSFColor.Red.Index;
+			cellStyle.SetFont(cellStyleFont); //将字
+			cellStyle.Alignment = NPOI.SS.UserModel.HorizontalAlignment.Center; //水平居中
+			cellStyle.VerticalAlignment = NPOI.SS.UserModel.VerticalAlignment.Center; //垂直居中
+			cellStyle.WrapText = true;//自动换行
+			cellStyle.BorderBottom = BorderStyle.Thin;
+			cellStyle.BorderRight = BorderStyle.Thin;
+			cellStyle.BorderTop = BorderStyle.Thin;
+			cellStyle.BorderLeft = BorderStyle.Thin;
+			cellStyle.TopBorderColor = HSSFColor.Black.Index;//DarkGreen(黑绿色)
+			cellStyle.RightBorderColor = HSSFColor.Black.Index;
+			cellStyle.BottomBorderColor = HSSFColor.Black.Index;
+			cellStyle.LeftBorderColor = HSSFColor.Black.Index;
+
+			return cellStyle;
+		}
+
+		private HSSFCellStyle CreateColorStyle(HSSFWorkbook workbook,string setvalue)
+		{
+			HSSFCellStyle cellStyle = (HSSFCellStyle)workbook.CreateCellStyle(); //创建列头单元格实例样式
+			var cellStyleFont = (HSSFFont)workbook.CreateFont(); //创建变色字体
+
+			if (setvalue.Contains("Dup"))
+			{
+				cellStyleFont.Color = HSSFColor.SeaGreen.Index;
+			}
+			else if (setvalue.Contains("MS"))
+			{
+				cellStyleFont.Color = HSSFColor.Red.Index;
+			}
+			else if (setvalue.Length > 3 && setvalue.Remove(0,setvalue.Length - 3).Contains("102"))
+			{
+				cellStyleFont.Color = HSSFColor.SkyBlue.Index;
+			}
+
+			cellStyle.SetFont(cellStyleFont); //将字
+			cellStyle.Alignment = NPOI.SS.UserModel.HorizontalAlignment.Center; //水平居中
+			cellStyle.VerticalAlignment = NPOI.SS.UserModel.VerticalAlignment.Center; //垂直居中
+			cellStyle.WrapText = true;//自动换行
+			cellStyle.BorderBottom = BorderStyle.Thin;
+			cellStyle.BorderRight = BorderStyle.Thin;
+			cellStyle.BorderTop = BorderStyle.Thin;
+			cellStyle.BorderLeft = BorderStyle.Thin;
 			cellStyle.TopBorderColor = HSSFColor.Black.Index;//DarkGreen(黑绿色)
 			cellStyle.RightBorderColor = HSSFColor.Black.Index;
 			cellStyle.BottomBorderColor = HSSFColor.Black.Index;
