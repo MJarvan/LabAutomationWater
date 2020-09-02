@@ -22,6 +22,7 @@ using Microsoft.CSharp;
 using System.CodeDom.Compiler;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using NPOI.XSSF.UserModel;
 
 namespace LabAutomationWater
 {
@@ -113,10 +114,158 @@ namespace LabAutomationWater
 				else if (int.Parse(scrollViewer.Tag.ToString()) == 1)
 				{
 					//创建数据结构
-					CreateTxt(paths[0]);
+					//CreateTxt(paths[0]);
+					CreateExcel(paths[0]);
 				}
 			}
 			e.Handled = true;
+		}
+
+		private void CreateExcel(string path)
+		{
+			AllClear();
+			IWorkbook workbook = null;
+			TabControl tabControl = new TabControl();
+			tabControl.Name = "tabControl";
+			List<KeyValuePair<string,int>> compounds = new List<KeyValuePair<string,int>>();
+			if (File.Exists(path))
+			{
+				using (FileStream fs = File.OpenRead(path))
+				{
+					// 2007版本
+					if (path.Contains(".xlsx"))
+					{
+						workbook = new XSSFWorkbook(fs);
+					}
+					// 2003版本
+					else if (path.Contains(".xls"))
+					{
+						workbook = new HSSFWorkbook(fs);
+					}
+					if (workbook != null)
+					{
+						List<IRow> rows = new List<IRow>();
+						ISheet sheet = workbook.GetSheetAt(0);//读取第一个sheet，当然也可以循环读取每个sheet
+						for (int i = 0; i < sheet.LastRowNum; i++)
+						{
+							IRow row = sheet.GetRow(i);
+							if (row == null)
+							{
+								CreateDataTable(tabControl,rows);
+								rows.Clear();
+							}
+							else
+							{
+								rows.Add(row);
+							}
+						}
+					}
+
+					AddParallelSamplesToList();
+
+					maingrid.Children.Add(tabControl);
+					ReportNoLabel.Content = ReportNo;
+				}
+			}
+		}
+
+		private void CreateDataTable(TabControl tabControl,List<IRow> rows)
+		{
+			sampleNameList.Clear();
+			DataTable datatable = new DataTable();
+			int spNum = 0;
+			for (int i = 0; i < rows.Count; i++)
+			{
+				IRow row = rows[i];
+				//第一行只有那个编号有用
+				if (i == 0)
+				{
+					ICell cell = row.GetCell(row.LastCellNum - 1);
+					spNum = (int)cell.NumericCellValue;
+				}
+				//第二行是表名
+				else if (i == 1)
+				{
+					ICell cell = row.GetCell(row.LastCellNum - 1);
+					datatable.TableName = cell.StringCellValue;
+				}
+				else if (i == 2)
+				{
+					for (int j = 0; j < row.LastCellNum; j++)
+					{
+
+						ICell cell = row.GetCell(j);
+						string headname = (cell == null) ? "编号" : cell.StringCellValue.ToString();
+						datatable.Columns.Add(headname);
+					}
+
+				}
+				else
+				{
+					DataRow dr = datatable.NewRow();
+					dr.ItemArray = row.Cells.ToArray();
+					datatable.Rows.Add(dr);
+				}
+			}
+			//提取委托单号,删除后缀.gcd以及BQ的行
+			for (int k = datatable.Rows.Count - 1; k >= 0; k--)
+			{
+				string oldname = datatable.Rows[k]["数据文件名"].ToString();
+				//
+				if (oldname.Contains("BQ"))
+				{
+					datatable.Rows[k].Delete();
+				}
+				else
+				{
+					string[] newname = oldname.Replace(".gcd","").Split(" ");
+
+					if (sampleNameList.Count != datatable.Rows.Count)
+					{
+						if (newname.Length > 1)
+						{
+							ReportNo = (ReportNo == string.Empty) ? newname[0] : ReportNo;
+							sampleNameList.Insert(0,newname[1]);
+							datatable.Rows[k]["数据文件名"] = newname[1];
+						}
+						else
+						{
+							datatable.Rows[k]["数据文件名"] = newname[0];
+							sampleNameList.Insert(0,newname[0]);
+						}
+					}
+				}
+			}
+			datatable.AcceptChanges();
+			//根据有机组要求只要三列
+			DataTable newdatatable = new DataTable();
+			newdatatable.TableName = datatable.TableName;
+			newdatatable.Columns.Add("编号");
+			newdatatable.Columns.Add("数据文件名");
+			newdatatable.Columns.Add("浓度");
+
+			for (int i = 0; i < datatable.Rows.Count; i++)
+			{
+				DataRow dr = newdatatable.NewRow();
+				for (int j = 0; j < newdatatable.Columns.Count; j++)
+				{
+					string newColumnName = newdatatable.Columns[j].ColumnName;
+					dr[newColumnName] = datatable.Rows[i][newColumnName];
+				}
+				newdatatable.Rows.Add(dr);
+			}
+
+			TabItem tabItem = new TabItem();
+			StackPanel stackPanel = CreateStackPanel(datatable.TableName,spNum);
+			tabItem.Header = stackPanel;
+			DataGrid dg = new DataGrid();
+			dg.Name = "dataGrid";
+			dg.ItemsSource = newdatatable.DefaultView;
+			dg.CanUserSortColumns = true;
+			dg.CanUserReorderColumns = true;
+			tabItem.Content = dg;
+			tabControl.Items.Add(tabItem);
+			compoundsDataSet.Tables.Add(newdatatable);
 		}
 
 		/// <summary>
@@ -126,6 +275,7 @@ namespace LabAutomationWater
 		private void CreateTemplate(string path)
 		{
 			string symbol = "：";
+
 			if (File.Exists(path))
 			{
 				List<string> alldata = File.ReadAllLines(path,Encoding.UTF8).ToList();
@@ -420,7 +570,7 @@ namespace LabAutomationWater
 			stackPanel.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
 
 			Label numLabel = new Label();
-			numLabel.Content = (num + 1).ToString() + ".";
+			numLabel.Content = num.ToString() + ".";
 			numLabel.HorizontalContentAlignment = System.Windows.HorizontalAlignment.Center;
 			numLabel.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
 
@@ -1183,6 +1333,7 @@ namespace LabAutomationWater
 					cell.CellStyle = cellStyle;
 					//按照已有的弄
 					//用于最右边的那一版导出，因为有以下空白的特殊情况
+
 					if (j - verticalSheetColumnCount * Count - 2 >= cellList.Count && j - verticalSheetColumnCount * Count - 2 < importTakeNum)
 					{
 						string setvalue = (i == 0) ? "以下空白" : "";
@@ -1205,25 +1356,63 @@ namespace LabAutomationWater
 						{
 							cell.SetCellValue("-");
 						}
-						//是C浓度
-						else if (advantageNum.Count > 0)
+						else if (cellList.Count == importTakeNum)
 						{
-							foreach (int num in advantageNum)
+							//是C浓度
+							if (advantageNum.Count > 0)
 							{
-								if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
+								foreach (int num in advantageNum)
 								{
-									cell.SetCellValue("-");
-									break;
+									if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
+									{
+										cell.SetCellValue("-");
+										break;
+									}
+									else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
+									{
+										cell.SetCellValue("-");
+									}
+									else
+									{
+										cell.SetCellValue(constantvolumeTextBox.Text);
+									}
 								}
-								else
+							}
+							else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
+							{
+								cell.SetCellValue("-");
+							}
+						}
+						else if (cellList.Count < importTakeNum)
+						{
+							//是C浓度
+							if (advantageNum.Count > 0)
+							{
+								foreach (int num in advantageNum)
 								{
-									cell.SetCellValue(samplingquantityTextBox.Text);
+									if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
+									{
+										cell.SetCellValue("-");
+										break;
+									}
+									else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
+									{
+										cell.SetCellValue("-");
+									}
+									else
+									{
+										cell.SetCellValue(constantvolumeTextBox.Text);
+									}
 								}
+							}
+							else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
+							{
+								cell.SetCellValue("-");
 							}
 						}
 						else
 						{
-							cell.SetCellValue(samplingquantityTextBox.Text);
+							cell.SetCellValue(constantvolumeTextBox.Text);
 						}
 					}
 					else if (i == (int)constantvolumeLabel.Tag)
@@ -1238,20 +1427,58 @@ namespace LabAutomationWater
 						{
 							cell.SetCellValue("-");
 						}
-						//是C浓度
-						else if (advantageNum.Count > 0)
+						else if (cellList.Count == importTakeNum)
 						{
-							foreach (int num in advantageNum)
+							//是C浓度
+							if (advantageNum.Count > 0)
 							{
-								if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
+								foreach (int num in advantageNum)
 								{
-									cell.SetCellValue("-");
-									break;
+									if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
+									{
+										cell.SetCellValue("-");
+										break;
+									}
+									else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
+									{
+										cell.SetCellValue("-");
+									}
+									else
+									{
+										cell.SetCellValue(constantvolumeTextBox.Text);
+									}
 								}
-								else
+							}
+							else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
+							{
+								cell.SetCellValue("-");
+							}
+						}
+						else if (cellList.Count < importTakeNum)
+						{
+							//是C浓度
+							if (advantageNum.Count > 0)
+							{
+								foreach (int num in advantageNum)
 								{
-									cell.SetCellValue(constantvolumeTextBox.Text);
+									if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
+									{
+										cell.SetCellValue("-");
+										break;
+									}
+									else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
+									{
+										cell.SetCellValue("-");
+									}
+									else
+									{
+										cell.SetCellValue(constantvolumeTextBox.Text);
+									}
 								}
+							}
+							else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
+							{
+								cell.SetCellValue("-");
 							}
 						}
 						else
@@ -1272,24 +1499,57 @@ namespace LabAutomationWater
 							cell.SetCellValue("-");
 						}
 						//是C浓度
-						else if (advantageNum.Count > 0)
+						else if (cellList.Count == importTakeNum)
 						{
-							foreach (int num in advantageNum)
+							if (advantageNum.Count > 0)
 							{
-								if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
+								foreach (int num in advantageNum)
 								{
-									cell.SetCellValue("-");
-									break;
-								}
-								else
-								{
-									cell.SetCellValue(dilutionratioTextBox.Text);
+									if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
+									{
+										cell.SetCellValue("-");
+										break;
+									}
+									else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
+									{
+										cell.SetCellValue("-");
+									}
+									else
+									{
+										cell.SetCellValue(constantvolumeTextBox.Text);
+									}
 								}
 							}
 						}
+						else if (cellList.Count < importTakeNum)
+						{
+							if (advantageNum.Count > 0)
+							{
+								foreach (int num in advantageNum)
+								{
+									if (j - verticalSheetColumnCount * Count - 2 == num + importTakeNum)
+									{
+										cell.SetCellValue("-");
+										break;
+									}
+									else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
+									{
+										cell.SetCellValue("-");
+									}
+									else
+									{
+										cell.SetCellValue(constantvolumeTextBox.Text);
+									}
+								}
+							}
+						}
+						else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
+						{
+							cell.SetCellValue("-");
+						}
 						else
 						{
-							cell.SetCellValue(dilutionratioTextBox.Text);
+							cell.SetCellValue(constantvolumeTextBox.Text);
 						}
 					}
 					//第四行
@@ -1442,7 +1702,11 @@ namespace LabAutomationWater
 								else
 								{
 									string sampleName = cellList[l - verticalSheetColumnCount * Count - 2 - cellList.Count];
-									if (sampleName.Contains("平均"))
+									if (sampleName.Contains("CCV"))
+									{
+										compoundsCell.SetCellValue("-");
+									}
+									else if (sampleName.Contains("平均"))
 									{
 										//获取平均样的位置
 										int num = newsampleNameList.IndexOf(sampleName);
@@ -1486,7 +1750,11 @@ namespace LabAutomationWater
 								else
 								{
 									string sampleName = cellList[l - verticalSheetColumnCount * Count - 2 - importTakeNum];
-									if (sampleName.Contains("平均"))
+									if (sampleName.Contains("CCV"))
+									{
+										compoundsCell.SetCellValue("-");
+									}
+									else if (sampleName.Contains("平均"))
 									{
 										//获取平均样的位置
 										int num = newsampleNameList.IndexOf(sampleName);
