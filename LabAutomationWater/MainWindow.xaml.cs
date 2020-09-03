@@ -1294,6 +1294,8 @@ namespace LabAutomationWater
 		}
 
 
+		int basicPotency = 0;
+
 		/// <summary>
 		/// 创建横表
 		/// </summary>
@@ -1378,6 +1380,7 @@ namespace LabAutomationWater
 						string setvalue = (i == 0) ? "以下空白" : "";
 						cell.SetCellValue(setvalue);
 					}
+					//第一行
 					else if (i == (int)samplingquantityLabel.Tag)
 					{
 						//常数
@@ -1416,6 +1419,10 @@ namespace LabAutomationWater
 							{
 								cell.SetCellValue("-");
 							}
+							else
+							{
+								cell.SetCellValue(constantvolumeTextBox.Text);
+							}
 						}
 						else if (cellList.Count < importTakeNum)
 						{
@@ -1443,12 +1450,13 @@ namespace LabAutomationWater
 							{
 								cell.SetCellValue("-");
 							}
-						}
-						else
-						{
-							cell.SetCellValue(constantvolumeTextBox.Text);
+							else
+							{
+								cell.SetCellValue(constantvolumeTextBox.Text);
+							}
 						}
 					}
+					//第二行
 					else if (i == (int)constantvolumeLabel.Tag)
 					{
 						//常数
@@ -1487,6 +1495,10 @@ namespace LabAutomationWater
 							{
 								cell.SetCellValue("-");
 							}
+							else
+							{
+								cell.SetCellValue(constantvolumeTextBox.Text);
+							}
 						}
 						else if (cellList.Count < importTakeNum)
 						{
@@ -1514,12 +1526,13 @@ namespace LabAutomationWater
 							{
 								cell.SetCellValue("-");
 							}
-						}
-						else
-						{
-							cell.SetCellValue(constantvolumeTextBox.Text);
+							else
+							{
+								cell.SetCellValue(constantvolumeTextBox.Text);
+							}
 						}
 					}
+					//第三行
 					else if (i == (int)dilutionratioLabel.Tag)
 					{
 						//常数
@@ -1554,6 +1567,14 @@ namespace LabAutomationWater
 									}
 								}
 							}
+							else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
+							{
+								cell.SetCellValue("-");
+							}
+							else
+							{
+								cell.SetCellValue(constantvolumeTextBox.Text);
+							}
 						}
 						else if (cellList.Count < importTakeNum)
 						{
@@ -1576,14 +1597,14 @@ namespace LabAutomationWater
 									}
 								}
 							}
-						}
-						else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
-						{
-							cell.SetCellValue("-");
-						}
-						else
-						{
-							cell.SetCellValue(constantvolumeTextBox.Text);
+							else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
+							{
+								cell.SetCellValue("-");
+							}
+							else
+							{
+								cell.SetCellValue(constantvolumeTextBox.Text);
+							}
 						}
 					}
 					//第四行
@@ -1709,9 +1730,14 @@ namespace LabAutomationWater
 												if (dtsampleName == sampleName)
 												{
 													string potency = dataRow["浓度"].ToString();
+													if (potency.Contains(".") && basicPotency == 0)
+													{
+														string[] strPotency = potency.Split(".");
+														basicPotency = strPotency[1].Length;
+													}
 													if (potency.Contains("-"))
 													{
-														compoundsCell.SetCellValue(CalculateAccuracyC(compoundName,"0"));
+														compoundsCell.SetCellValue(CalculateAccuracyPotency(basicPotency));
 													}
 													else
 													{
@@ -2214,6 +2240,30 @@ namespace LabAutomationWater
 				MethodInfo objMI = objHelloWorld.GetType().GetMethod("Hello");
 				objMI.Invoke(objHelloWorld,null);
 			}
+		}
+
+		/// <summary>
+		/// 计算谱图浓度精度
+		/// </summary>
+		/// <returns></returns>
+		private string CalculateAccuracyPotency(int num)
+		{
+			string answer = "0.";
+			
+			//计算后补零
+			if (num != 0)
+			{
+				if (answer.ToString().Contains("."))
+				{
+					string newanswer = answer.ToString();
+					for (int i = 0; i < num; i++)
+					{
+						newanswer += "0";
+					}
+					return newanswer;
+				}
+			}
+			return answer.Trim();
 		}
 
 		/// <summary>
