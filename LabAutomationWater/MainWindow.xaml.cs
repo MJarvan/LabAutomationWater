@@ -146,7 +146,7 @@ namespace LabAutomationWater
 					{
 						List<IRow> rows = new List<IRow>();
 						ISheet sheet = workbook.GetSheetAt(0);//读取第一个sheet，当然也可以循环读取每个sheet
-						for (int i = 0; i < sheet.LastRowNum; i++)
+						for (int i = 0; i <= sheet.LastRowNum; i++)
 						{
 							IRow row = sheet.GetRow(i);
 							if (row == null)
@@ -785,6 +785,13 @@ namespace LabAutomationWater
 			bordercellStyle.BorderTop = BorderStyle.Thin;
 			bordercellStyle.BorderLeft = BorderStyle.Thin;
 			bordercellStyle.BorderRight = BorderStyle.Thin;
+			HSSFCellStyle cellRedStyle = CreateRedStyle(workbook);
+			HSSFCellStyle cellGreyStyle = CreateGreyStyle(workbook);
+
+			List<HSSFCellStyle> listCellStyle = new List<HSSFCellStyle>();
+			listCellStyle.Add(bordercellStyle);
+			listCellStyle.Add(cellRedStyle);
+			listCellStyle.Add(cellGreyStyle);
 			//int Count = 0;
 			//前九行 大表头
 			for (int i = 0; i < 9; i++)
@@ -895,7 +902,10 @@ namespace LabAutomationWater
 									stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
 								}
 								stringBuilder.Append("f——稀释倍数\n");
-								stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
+								if (FormulaComboBox.Text.Contains("V1"))
+								{
+									stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
+								}
 								stringBuilder.Append("k——系数(" + coefficientTextBox.Text + ")\n");
 								formulacell.SetCellValue(stringBuilder.ToString());
 							}
@@ -910,7 +920,10 @@ namespace LabAutomationWater
 									stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
 								}
 								stringBuilder.Append("f——稀释倍数\n");
-								stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
+								if (FormulaComboBox.Text.Contains("V1"))
+								{
+									stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
+								}
 								formulacell.SetCellValue(stringBuilder.ToString());
 							}
 							break;
@@ -1038,7 +1051,7 @@ namespace LabAutomationWater
 			}
 			foreach (KeyValuePair<string,string> keyValuePair in compoundsNameList)
 			{
-				CreateHorizontalSheet(sheet,bordercellStyle,keyValuePair.Key,keyValuePair.Value,Count);
+				CreateHorizontalSheet(sheet,listCellStyle,keyValuePair.Key,keyValuePair.Value,Count);
 				Count++;
 			}
 
@@ -1165,8 +1178,11 @@ namespace LabAutomationWater
 		/// <param name="compoundName"></param>
 		/// <param name="modelC"></param>
 		/// <param name="Count"></param>
-		private void CreateHorizontalSheet(ISheet sheet,HSSFCellStyle cellStyle,string compoundName,string modelC,int Count)
+		private void CreateHorizontalSheet(ISheet sheet,List<HSSFCellStyle> listCellStyle,string compoundName,string modelC,int Count)
 		{
+			HSSFCellStyle cellStyle = listCellStyle[0];
+			HSSFCellStyle cellRedStyle = listCellStyle[1];
+			HSSFCellStyle cellGreyStyle = listCellStyle[2];
 			HSSFRow samplerow = (HSSFRow)sheet.GetRow(10);
 			HSSFRow limitrow = (HSSFRow)sheet.GetRow(12);
 			var sampleCell = samplerow.GetCell(Count);
@@ -1188,6 +1204,8 @@ namespace LabAutomationWater
 
 					if (i == 0 && Count == 4)
 					{
+						var newcellStyle = CreateColorStyle((HSSFWorkbook)sheet.Workbook,sampleName);
+						cell.CellStyle = newcellStyle;
 						cell.SetCellValue(sampleName);
 					}
 					else if (i == 1 && Count == 4)
@@ -1247,11 +1265,27 @@ namespace LabAutomationWater
 							int num = newsampleNameList.IndexOf(sampleName);
 							//平均样的前两个加起来除以二就是平均值
 							string setvalue = CompareCompoundWithFormula(compoundName,modelC,newsampleNameList[num - 1],newsampleNameList[num - 2]);
+							if (setvalue == "ND" || setvalue.Contains("<"))
+							{
+								cell.CellStyle = cellGreyStyle;
+							}
+							else
+							{
+								cell.CellStyle = cellRedStyle;
+							}
 							cell.SetCellValue(setvalue);
 						}
 						else
 						{
 							string setvalue = (sampleName == "以下空白") ? string.Empty : CompareCompoundWithFormula(compoundName,modelC,sampleName);
+							if (setvalue == "ND" || setvalue.Contains("<"))
+							{
+								cell.CellStyle = cellGreyStyle;
+							}
+							else
+							{
+								cell.CellStyle = cellRedStyle;
+							}
 							cell.SetCellValue(setvalue);
 						}
 					}
