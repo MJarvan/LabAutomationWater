@@ -902,7 +902,7 @@ namespace LabAutomationWater
 									stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
 								}
 								stringBuilder.Append("f——稀释倍数\n");
-								if (FormulaComboBox.Text.Contains("V1"))
+								if (FormulaComboBox.Text.Contains("V"))
 								{
 									stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
 								}
@@ -920,7 +920,7 @@ namespace LabAutomationWater
 									stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
 								}
 								stringBuilder.Append("f——稀释倍数\n");
-								if (FormulaComboBox.Text.Contains("V1"))
+								if (FormulaComboBox.Text.Contains("V"))
 								{
 									stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
 								}
@@ -1343,7 +1343,10 @@ namespace LabAutomationWater
 							stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
 						}
 						stringBuilder.Append("f——稀释倍数\n");
-						stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
+						if (FormulaComboBox.Text.Contains("V"))
+						{
+							stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
+						}
 						stringBuilder.Append("k——系数(" + coefficientTextBox.Text + ")\n");
 						formulacell.SetCellValue(stringBuilder.ToString());
 					}
@@ -1358,7 +1361,10 @@ namespace LabAutomationWater
 							stringBuilder.Append("V1——定容体积(" + constantvolumeComboBox.Text + ")\n");
 						}
 						stringBuilder.Append("f——稀释倍数\n");
-						stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
+						if (FormulaComboBox.Text.Contains("V"))
+						{
+							stringBuilder.Append("V——取样量(" + samplingquantityComboBox.Text + ")\n");
+						}
 						formulacell.SetCellValue(stringBuilder.ToString());
 					}
 				}
@@ -1393,68 +1399,35 @@ namespace LabAutomationWater
 						{
 							cell.SetCellValue("-");
 						}
-						else if (cellList.Count == importTakeNum)
+						//是C浓度
+						else if (advantageNum.Count > 0)
 						{
-							//是C浓度
-							if (advantageNum.Count > 0)
+							foreach (int num in advantageNum)
 							{
-								foreach (int num in advantageNum)
+								if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
 								{
-									if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
-									{
-										cell.SetCellValue("-");
-										break;
-									}
-									else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
-									{
-										cell.SetCellValue("-");
-									}
-									else
-									{
-										cell.SetCellValue(constantvolumeTextBox.Text);
-									}
+									cell.SetCellValue("-");
+									break;
+								}
+								else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
+								{
+									cell.SetCellValue("-");
+								}
+								else
+								{
+									cell.SetCellValue(samplingquantityTextBox.Text);
 								}
 							}
-							else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
-							{
-								cell.SetCellValue("-");
-							}
-							else
-							{
-								cell.SetCellValue(constantvolumeTextBox.Text);
-							}
 						}
-						else if (cellList.Count < importTakeNum)
+						else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
 						{
-							//是C浓度
-							if (advantageNum.Count > 0)
-							{
-								foreach (int num in advantageNum)
-								{
-									if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
-									{
-										cell.SetCellValue("-");
-										break;
-									}
-									else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
-									{
-										cell.SetCellValue("-");
-									}
-									else
-									{
-										cell.SetCellValue(constantvolumeTextBox.Text);
-									}
-								}
-							}
-							else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
-							{
-								cell.SetCellValue("-");
-							}
-							else
-							{
-								cell.SetCellValue(constantvolumeTextBox.Text);
-							}
+							cell.SetCellValue("-");
 						}
+						else
+						{
+							cell.SetCellValue(samplingquantityTextBox.Text);
+						}
+
 					}
 					//第二行
 					else if (i == (int)constantvolumeLabel.Tag)
@@ -1469,67 +1442,33 @@ namespace LabAutomationWater
 						{
 							cell.SetCellValue("-");
 						}
-						else if (cellList.Count == importTakeNum)
+						//是C浓度
+						else if (advantageNum.Count > 0)
 						{
-							//是C浓度
-							if (advantageNum.Count > 0)
+							foreach (int num in advantageNum)
 							{
-								foreach (int num in advantageNum)
+								if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
 								{
-									if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
-									{
-										cell.SetCellValue("-");
-										break;
-									}
-									else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
-									{
-										cell.SetCellValue("-");
-									}
-									else
-									{
-										cell.SetCellValue(constantvolumeTextBox.Text);
-									}
+									cell.SetCellValue("-");
+									break;
 								}
-							}
-							else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
-							{
-								cell.SetCellValue("-");
-							}
-							else
-							{
-								cell.SetCellValue(constantvolumeTextBox.Text);
+								else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
+								{
+									cell.SetCellValue("-");
+								}
+								else
+								{
+									cell.SetCellValue(constantvolumeTextBox.Text);
+								}
 							}
 						}
-						else if (cellList.Count < importTakeNum)
+						else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
 						{
-							//是C浓度
-							if (advantageNum.Count > 0)
-							{
-								foreach (int num in advantageNum)
-								{
-									if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
-									{
-										cell.SetCellValue("-");
-										break;
-									}
-									else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
-									{
-										cell.SetCellValue("-");
-									}
-									else
-									{
-										cell.SetCellValue(constantvolumeTextBox.Text);
-									}
-								}
-							}
-							else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
-							{
-								cell.SetCellValue("-");
-							}
-							else
-							{
-								cell.SetCellValue(constantvolumeTextBox.Text);
-							}
+							cell.SetCellValue("-");
+						}
+						else
+						{
+							cell.SetCellValue(constantvolumeTextBox.Text);
 						}
 					}
 					//第三行
@@ -1546,65 +1485,32 @@ namespace LabAutomationWater
 							cell.SetCellValue("-");
 						}
 						//是C浓度
-						else if (cellList.Count == importTakeNum)
+						else if (advantageNum.Count > 0)
 						{
-							if (advantageNum.Count > 0)
+							foreach (int num in advantageNum)
 							{
-								foreach (int num in advantageNum)
+								if (j - verticalSheetColumnCount * Count - 2 == num + importTakeNum)
 								{
-									if (j - verticalSheetColumnCount * Count - 2 == num + cellList.Count)
-									{
-										cell.SetCellValue("-");
-										break;
-									}
-									else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
-									{
-										cell.SetCellValue("-");
-									}
-									else
-									{
-										cell.SetCellValue(constantvolumeTextBox.Text);
-									}
+									cell.SetCellValue("-");
+									break;
 								}
-							}
-							else if (cellList[j - verticalSheetColumnCount * Count - 2 - cellList.Count].Contains("CCV"))
-							{
-								cell.SetCellValue("-");
-							}
-							else
-							{
-								cell.SetCellValue(constantvolumeTextBox.Text);
+								else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
+								{
+									cell.SetCellValue("-");
+								}
+								else
+								{
+									cell.SetCellValue(dilutionratioTextBox.Text);
+								}
 							}
 						}
-						else if (cellList.Count < importTakeNum)
+						else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
 						{
-							if (advantageNum.Count > 0)
-							{
-								foreach (int num in advantageNum)
-								{
-									if (j - verticalSheetColumnCount * Count - 2 == num + importTakeNum)
-									{
-										cell.SetCellValue("-");
-										break;
-									}
-									else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
-									{
-										cell.SetCellValue("-");
-									}
-									else
-									{
-										cell.SetCellValue(constantvolumeTextBox.Text);
-									}
-								}
-							}
-							else if (cellList[j - verticalSheetColumnCount * Count - 2 - importTakeNum].Contains("CCV"))
-							{
-								cell.SetCellValue("-");
-							}
-							else
-							{
-								cell.SetCellValue(constantvolumeTextBox.Text);
-							}
+							cell.SetCellValue("-");
+						}
+						else
+						{
+							cell.SetCellValue(dilutionratioTextBox.Text);
 						}
 					}
 					//第四行
