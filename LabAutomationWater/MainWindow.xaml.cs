@@ -154,6 +154,12 @@ namespace LabAutomationWater
 								CreateDataTable(tabControl,rows);
 								rows.Clear();
 							}
+							else if (i == sheet.LastRowNum)
+							{
+								rows.Add(row);
+								CreateDataTable(tabControl,rows);
+								rows.Clear();
+							}
 							else
 							{
 								rows.Add(row);
@@ -1636,7 +1642,7 @@ namespace LabAutomationWater
 												if (dtsampleName == sampleName)
 												{
 													string potency = dataRow["浓度"].ToString();
-													if (potency.Contains(".") && basicPotency == 0)
+													/*if (potency.Contains(".") && basicPotency == 0)
 													{
 														string[] strPotency = potency.Split(".");
 														basicPotency = strPotency[1].Length;
@@ -1648,6 +1654,14 @@ namespace LabAutomationWater
 													else
 													{
 														compoundsCell.SetCellValue(potency);
+													}*/
+													if (potency.Contains("-"))
+													{
+														compoundsCell.SetCellValue(CalculateAccuracyCThree(basicPotency.ToString()));
+													}
+													else
+													{
+														compoundsCell.SetCellValue(CalculateAccuracyCThree(potency));
 													}
 												}
 											}
@@ -2146,6 +2160,51 @@ namespace LabAutomationWater
 				MethodInfo objMI = objHelloWorld.GetType().GetMethod("Hello");
 				objMI.Invoke(objHelloWorld,null);
 			}
+		}
+
+		/// <summary>
+		/// 补齐三位数的零
+		/// </summary>
+		/// <param name="compoundName"></param>
+		/// <param name="v"></param>
+		/// <returns></returns>
+		private string CalculateAccuracyCThree(string value)
+		{
+			string[] beforeValue = value.Split(".");
+			int num;
+			//没有小数点的
+			if (beforeValue.Length < 2)
+			{
+				num = 3;
+			}
+			else
+			{
+				num = 3 - beforeValue[beforeValue.Length - 1].Length;
+			}
+			//计算后补零
+			if (num != 0)
+			{
+				if (value.ToString().Contains("."))
+				{
+					string answer = value.ToString();
+					for (int i = 0; i < num; i++)
+					{
+						answer += "0";
+					}
+					return answer;
+				}
+				else
+				{
+					string answer = value.ToString() + ".";
+					for (int i = 0; i < num; i++)
+					{
+						answer += "0";
+					}
+					return answer;
+				}
+			}
+
+			return value;
 		}
 
 		/// <summary>
