@@ -1217,16 +1217,28 @@ namespace LabAutomationWater
 					else if (i == 1 && Count == 4)
 					{
 						string setvalue = (sampleName == "以下空白") ? string.Empty : samplingquantityTextBox.Text;
+						if (sampleName.Contains("平均"))
+						{
+							setvalue = "-";
+						}
 						cell.SetCellValue(setvalue);
 					}
 					else if (i == 2 && Count == 4)
 					{
 						string setvalue = (sampleName == "以下空白") ? string.Empty : dilutionratioTextBox.Text;
+						if (sampleName.Contains("平均"))
+						{
+							setvalue = "-";
+						}
 						cell.SetCellValue(setvalue);
 					}
 					else if (i == 3 && Count == 4)
 					{
 						string setvalue = (sampleName == "以下空白") ? string.Empty : constantvolumeTextBox.Text;
+						if (sampleName.Contains("平均"))
+						{
+							setvalue = "-";
+						}
 						cell.SetCellValue(setvalue);
 					}
 					else if (i == Count)
